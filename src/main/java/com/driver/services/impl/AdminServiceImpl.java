@@ -11,6 +11,8 @@ import com.driver.services.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+
 @Service
 public class AdminServiceImpl implements AdminService {
     @Autowired
@@ -24,38 +26,51 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public Admin register(String username, String password) {
-        Admin admin = new Admin(username,password);
+        Admin admin=new Admin();
+
+        admin.setUsername(username);
+        admin.setPassword(password);
+
         adminRepository1.save(admin);
         return admin;
     }
 
     @Override
     public Admin addServiceProvider(int adminId, String providerName) {
-        ServiceProvider serviceProvider = new ServiceProvider();
-        Admin admin = adminRepository1.findById(adminId).orElse(null);
-        serviceProvider.setAdmin(admin);
+        Admin admin=adminRepository1.findById(adminId).get();
+
+        ServiceProvider serviceProvider=new ServiceProvider();
         serviceProvider.setName(providerName);
-        serviceProviderRepository1.save(serviceProvider);
+        serviceProvider.setAdmin(admin);
+        admin.getServiceProviders().add(serviceProvider);
+
+        adminRepository1.save(admin);
         return admin;
     }
 
     @Override
     public ServiceProvider addCountry(int serviceProviderId, String countryName) throws Exception{
-        String countryNamUpper = countryName.toUpperCase();
         boolean isPresent = false;
-        for(CountryName countryName1 : CountryName.values()){
-            if(countryName1.toString().equals(countryNamUpper)){
+
+        String CountryNameInUpperCase=countryName.toUpperCase();
+
+        for(CountryName countryName1:CountryName.values()){
+            if(countryName1.toString().equals(CountryNameInUpperCase)){
                 isPresent = true;
-                break;
             }
         }
-        if(!isPresent) throw new Exception("Country name not found");
-        ServiceProvider serviceProvider = serviceProviderRepository1.findById(serviceProviderId).get();
-        Country country = new Country();
-        country.setCountryName(CountryName.valueOf(countryNamUpper));
-        country.setCode(CountryName.valueOf(countryNamUpper).toCode());
+        if(!isPresent){
+            throw new Exception("Country not found");
+        }
+        ServiceProvider serviceProvider=serviceProviderRepository1.findById(serviceProviderId).get();
+
+        Country country=new Country();
+
+        country.setCountryName(CountryName.valueOf(CountryNameInUpperCase));
+        country.setCode(CountryName.valueOf(CountryNameInUpperCase).toCode());
         country.setServiceProvider(serviceProvider);
         serviceProvider.getCountryList().add(country);
+
         serviceProviderRepository1.save(serviceProvider);
         return serviceProvider;
     }
